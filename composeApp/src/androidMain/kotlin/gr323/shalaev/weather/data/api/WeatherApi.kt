@@ -1,5 +1,6 @@
 package gr323.shalaev.weather.data.api
 
+import gr323.shalaev.weather.data.models.CityLocationResponse
 import gr323.shalaev.weather.data.models.CityResponse
 import gr323.shalaev.weather.data.models.CoastlineResponse
 import gr323.shalaev.weather.data.models.CountryResponse
@@ -37,6 +38,9 @@ interface WeatherApi {
 
     @GET("rpc/get_cities")
     suspend fun getCitiesFromCountry(@Query("country") country: Int): Response<List<CityResponse>>
+
+    @GET("rpc/get_city_locations")
+    suspend fun getCityLocations(): Response<List<CityLocationResponse>>
 
 
 

@@ -21,6 +21,7 @@ class MapViewModel: BaseScreenViewModel<MapState>(MapState.InitState){
         viewModelScope.launch {
             getCostline()
             getRegions()
+            getCitiesLocation()
         }
     }
 
@@ -122,6 +123,19 @@ class MapViewModel: BaseScreenViewModel<MapState>(MapState.InitState){
                 onSuccess = { response ->
                     reduce {
                         state.copy(cities = response.map { it.toUi() })
+                    }
+                }
+            )
+        }
+    }
+
+    fun getCitiesLocation(){
+        viewModelScope.launch {
+            handleApiResponse(
+                call = { api.getCityLocations() },
+                onSuccess = { response ->
+                    reduce {
+                        state.copy(cityLocations = response.map { it.toUi() })
                     }
                 }
             )

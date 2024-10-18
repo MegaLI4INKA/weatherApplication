@@ -1,6 +1,7 @@
 package gr323.shalaev.weather.screens.map_screen
 
 import androidx.compose.animation.fadeIn
+import gr323.shalaev.weather.data.models.CityLocationUi
 import gr323.shalaev.weather.data.models.CityUi
 import gr323.shalaev.weather.data.models.CoastlineUi
 import gr323.shalaev.weather.data.models.CountryUi
@@ -14,6 +15,7 @@ data class MapState(
     val showRegionMenu: Boolean,
     val showCountryMenu: Boolean,
     val showCityMenu: Boolean,
+    val cityLocations: List<CityLocationUi>,
 
     val selectedRegion: RegionUi,
     val selectedCountry: CountryUi,
@@ -25,6 +27,7 @@ data class MapState(
             regions = emptyList(),
             countries = emptyList(),
             cities = emptyList(),
+            cityLocations = emptyList(),
             showRegionMenu = false,
             showCountryMenu = false,
             showCityMenu = false,

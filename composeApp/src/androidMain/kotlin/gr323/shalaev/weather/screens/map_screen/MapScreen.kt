@@ -1,6 +1,7 @@
 package gr323.shalaev.weather.screens.map_screen
 
 import android.graphics.Point
+import android.graphics.drawable.shapes.Shape
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -67,7 +70,7 @@ fun MapScreen(){
                 Spacer(modifier = Modifier.size(14.dp))
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f), thickness = 2.dp)
                 Spacer(modifier = Modifier.size(14.dp))
-                WorldMap(state.coastline, selectedCityLatitude = 30.0, selectedCityLongitude = 59.0)
+                WorldMap(state.coastline, selectedCityLatitude = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?.longitude, selectedCityLongitude = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?.latitude)
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -216,6 +219,15 @@ fun MapScreen(){
                         }
                     }
                 }
+                Button(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    shape = RoundedCornerShape(4.dp),
+                    onClick = {
+
+                    }
+                ){
+                    Text(text = "Explore")
+                }
             }
         }
     }
@@ -271,7 +283,7 @@ fun WorldMap(
                     val cityY = longitudeToY(selectedCityLongitude, minLongitude, maxLongitude, size.height)
 
                     // Рисуем крестик
-                    val crossSize = 10.dp.toPx()
+                    val crossSize = 6.dp.toPx()
                     drawLine(
                         color = Color.Red,
                         start = Offset(cityX - crossSize, cityY - crossSize),
