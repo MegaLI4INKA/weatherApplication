@@ -10,7 +10,15 @@ data class CityLocationUi(
     val identifier: Int,
     val latitude: Double,
     val longitude: Double
-)
+){
+    companion object {
+        val Default = CityLocationUi(
+            identifier = 0,
+            latitude = 0.0,
+            longitude = 0.0
+        )
+    }
+}
 
 fun CityLocationResponse.toUi(): CityLocationUi {
     val data = this

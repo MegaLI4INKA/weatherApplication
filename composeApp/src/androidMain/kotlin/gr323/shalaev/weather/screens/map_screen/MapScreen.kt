@@ -2,6 +2,7 @@ package gr323.shalaev.weather.screens.map_screen
 
 import android.graphics.Point
 import android.graphics.drawable.shapes.Shape
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -44,9 +45,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import gr323.shalaev.weather.data.models.CityLocationUi
+import gr323.shalaev.weather.data.models.CityUi
 import gr323.shalaev.weather.data.models.CoastlineUi
 import gr323.shalaev.weather.data.models.CountryUi
 import gr323.shalaev.weather.data.models.RegionUi
+import kotlin.io.encoding.Base64
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +74,12 @@ fun MapScreen(){
                 Spacer(modifier = Modifier.size(14.dp))
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f), thickness = 2.dp)
                 Spacer(modifier = Modifier.size(14.dp))
-                WorldMap(state.coastline, selectedCityLatitude = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?.longitude, selectedCityLongitude = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?.latitude)
+                WorldMap(
+                    state.coastline,
+                    selectedCity = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?: CityLocationUi.Default,
+                    cityList = state.cityLocations.filter { cityLocation ->
+                    state.cities.any { city -> city.identifier == cityLocation.identifier }
+                })
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -236,14 +245,13 @@ fun MapScreen(){
 @Composable
 fun WorldMap(
     points: List<CoastlineUi>,
-    selectedCityLatitude: Double?, // Добавляем координаты города
-    selectedCityLongitude: Double?
+    selectedCity: CityLocationUi,
+    cityList: List<CityLocationUi>
 ) {
     Box(
         modifier = Modifier.padding(6.dp)
     ) {
         Canvas(modifier = Modifier.aspectRatio(8f / 5)) {
-            // Проверяем, есть ли точки для отрисовки
             if (points.isNotEmpty()) {
                 // Определяем границы карты
                 val minLatitude = points.minOf { it.latitude }
@@ -251,57 +259,71 @@ fun WorldMap(
                 val minLongitude = points.minOf { it.longitude }
                 val maxLongitude = points.maxOf { it.longitude }
 
-                // Начинаем рисовать береговую линию
-                for (i in 0 until points.size - 1) {
-                    val startPoint = points[i]
-                    val endPoint = points[i + 1]
+                val path = Path().apply {
+                    val firstPoint = points.first()
+                    var lastX = latitudeToX(firstPoint.latitude, minLatitude, maxLatitude, size.width)
+                    var lastY = longitudeToY(firstPoint.longitude, minLongitude, maxLongitude, size.height)
 
-                    // Преобразуем координаты в пиксели
-                    val startX = latitudeToX(startPoint.latitude, minLatitude, maxLatitude, size.width)
-                    val startY = longitudeToY(startPoint.longitude, minLongitude, maxLongitude, size.height)
-                    val endX = latitudeToX(endPoint.latitude, minLatitude, maxLatitude, size.width)
-                    val endY = longitudeToY(endPoint.longitude, minLongitude, maxLongitude, size.height)
+                    moveTo(lastX, lastY)
 
-                    val distance = Math.hypot((startX - endX).toDouble(), (startY - endY).toDouble())
-                    val threshold = 30f
+                    val threshold = 30f // Пороговое значение для расстояния между точками
 
-                    if (distance > threshold) {
-                        continue
+                    for (i in 1 until points.size) {
+                        val point = points[i]
+                        val x = latitudeToX(point.latitude, minLatitude, maxLatitude, size.width)
+                        val y = longitudeToY(point.longitude, minLongitude, maxLongitude, size.height)
+
+                        // Рассчитываем расстояние между текущей и предыдущей точкой
+                        val distance = Math.hypot((x - lastX).toDouble(), (y - lastY).toDouble())
+
+                        if (distance > threshold) {
+                            // Если расстояние слишком большое, делаем moveTo
+                            moveTo(x, y)
+                        } else {
+                            // Иначе рисуем линию
+                            lineTo(x, y)
+                        }
+
+                        // Обновляем последнюю точку
+                        lastX = x
+                        lastY = y
                     }
-
-                    drawLine(
-                        color = Color.Black,
-                        start = Offset(startX, startY),
-                        end = Offset(endX, endY),
-                        strokeWidth = 1.dp.toPx()
-                    )
                 }
 
+                // Проверяем, корректно ли отрисовывается Path
+                drawPath(
+                    path = path,
+                    color = Color.Black,
+                    style = Stroke(width = 1.dp.toPx())
+                )
+
                 // Отображаем крестик для выбранного города
-                if (selectedCityLatitude != null && selectedCityLongitude != null) {
-                    val cityX = latitudeToX(selectedCityLatitude, minLatitude, maxLatitude, size.width)
-                    val cityY = longitudeToY(selectedCityLongitude, minLongitude, maxLongitude, size.height)
+
+                cityList.forEach { item ->
+                    val cityX = latitudeToX(item.longitude, minLatitude, maxLatitude, size.width)
+                    val cityY = longitudeToY(item.latitude, minLongitude, maxLongitude, size.height)
 
                     // Рисуем крестик
                     val crossSize = 6.dp.toPx()
                     drawLine(
-                        color = Color.Red,
+                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.1f)} ,
                         start = Offset(cityX - crossSize, cityY - crossSize),
                         end = Offset(cityX + crossSize, cityY + crossSize),
                         strokeWidth = 2.dp.toPx()
                     )
                     drawLine(
-                        color = Color.Red,
+                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.1f)} ,
                         start = Offset(cityX - crossSize, cityY + crossSize),
                         end = Offset(cityX + crossSize, cityY - crossSize),
                         strokeWidth = 2.dp.toPx()
                     )
                 }
+            } else {
+                Log.d("WorldMap", "No points to draw")
             }
         }
     }
 }
-
 
 private fun latitudeToX(latitude: Double, minLatitude: Double, maxLatitude: Double, width: Float): Float {
     val normalizedLatitude = (latitude - minLatitude) / (maxLatitude - minLatitude)
