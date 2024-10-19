@@ -5,6 +5,7 @@ import android.graphics.drawable.shapes.Shape
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +54,7 @@ import gr323.shalaev.weather.data.models.CoastlineUi
 import gr323.shalaev.weather.data.models.CountryUi
 import gr323.shalaev.weather.data.models.RegionUi
 import kotlin.io.encoding.Base64
+import kotlin.math.log
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,8 +82,11 @@ fun MapScreen(){
                     state.coastline,
                     selectedCity = state.cityLocations.find { it.identifier == state.selectedCity.identifier }?: CityLocationUi.Default,
                     cityList = state.cityLocations.filter { cityLocation ->
-                    state.cities.any { city -> city.identifier == cityLocation.identifier }
-                })
+                    state.cities.any { city -> city.identifier == cityLocation.identifier }},
+                    onSelectItem = { id ->
+                        viewModel.changeSelectedCity(id)
+                    }
+                )
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -246,12 +253,40 @@ fun MapScreen(){
 fun WorldMap(
     points: List<CoastlineUi>,
     selectedCity: CityLocationUi,
-    cityList: List<CityLocationUi>
+    cityList: List<CityLocationUi>,
+    onSelectItem: (Int) -> Unit
 ) {
     Box(
         modifier = Modifier.padding(6.dp)
     ) {
-        Canvas(modifier = Modifier.aspectRatio(8f / 5)) {
+        Canvas(
+            modifier = Modifier
+                .aspectRatio(8f / 5)
+                .pointerInput(cityList) {
+                    detectTapGestures { offset ->
+                        val firstPoint = points.first()
+                        val minLatitude = points.minOf { it.latitude }
+                        val maxLatitude = points.maxOf { it.latitude }
+                        val minLongitude = points.minOf { it.longitude }
+                        val maxLongitude = points.maxOf { it.longitude }
+
+                        // Преобразование координат нажатия в широту и долготу
+                        val latitude = xToLatitude(offset.x, minLatitude, maxLatitude, size.width.toFloat())
+                        val longitude = yToLongitude(offset.y, minLongitude, maxLongitude, size.height.toFloat())
+
+                        val currentCity = cityList.find {
+                            it.longitude in latitude-4..latitude+4 && it.latitude in longitude-4..longitude+4
+                        }
+                        currentCity?.let {
+                            onSelectItem(it.identifier)
+                        }
+//                        Log.d("Tapped", "Latitude: ${cityList.getOrNull(0)?.latitude.toString()?: "0.0"}, Longitude: ${cityList.getOrNull(0)?.longitude.toString()?: "0.0"}")
+//                        Log.d("Tapped", "Latitude: $latitude, Longitude: $longitude")
+//                        Log.d("Tapped", "$currentCity")
+                    }
+                }
+
+        ) {
             if (points.isNotEmpty()) {
                 // Определяем границы карты
                 val minLatitude = points.minOf { it.latitude }
@@ -298,21 +333,23 @@ fun WorldMap(
                 )
 
                 // Отображаем крестик для выбранного города
-
                 cityList.forEach { item ->
                     val cityX = latitudeToX(item.longitude, minLatitude, maxLatitude, size.width)
                     val cityY = longitudeToY(item.latitude, minLongitude, maxLongitude, size.height)
 
+                    Log.d("BIgCity", "${cityX}")
+                    Log.d("BIgCity", "${cityY}")
+
                     // Рисуем крестик
                     val crossSize = 6.dp.toPx()
                     drawLine(
-                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.1f)} ,
+                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.2f)} ,
                         start = Offset(cityX - crossSize, cityY - crossSize),
                         end = Offset(cityX + crossSize, cityY + crossSize),
                         strokeWidth = 2.dp.toPx()
                     )
                     drawLine(
-                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.1f)} ,
+                        color = if (item == selectedCity) {Color.Red} else{Color.Red.copy(0.2f)} ,
                         start = Offset(cityX - crossSize, cityY + crossSize),
                         end = Offset(cityX + crossSize, cityY - crossSize),
                         strokeWidth = 2.dp.toPx()
@@ -333,4 +370,14 @@ private fun latitudeToX(latitude: Double, minLatitude: Double, maxLatitude: Doub
 private fun longitudeToY(longitude: Double, minLongitude: Double, maxLongitude: Double, height: Float): Float {
     val normalizedLongitude = (longitude - minLongitude) / (maxLongitude - minLongitude)
     return ((1 - normalizedLongitude) * height).toFloat() // Инвертируем Y
+}
+
+private fun xToLatitude(x: Float, minLatitude: Double, maxLatitude: Double, width: Float): Double {
+    val normalizedX = x / width
+    return normalizedX * (maxLatitude - minLatitude) + minLatitude
+}
+
+private fun yToLongitude(y: Float, minLongitude: Double, maxLongitude: Double, height: Float): Double {
+    val normalizedY = 1 - (y / height)  // Инвертируем Y обратно
+    return normalizedY * (maxLongitude - minLongitude) + minLongitude
 }
