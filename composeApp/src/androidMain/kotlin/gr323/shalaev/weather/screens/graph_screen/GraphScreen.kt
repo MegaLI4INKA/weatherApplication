@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import gr323.shalaev.weather.navigation.Screens
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
@@ -35,12 +36,12 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun GraphScreen(cityName: String = "Undefined"){
+fun GraphScreen(cityId: Int, cityName: String){
     val viewModel: GraphViewModel = viewModel()
     val state by viewModel.stateFlow.collectAsState()
 
     LaunchedEffect(Unit){
-        viewModel.loadData(3)
+        viewModel.loadData(cityId)
     }
 
     if (state.dailyTemperatures.isEmpty()) {

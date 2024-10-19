@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -48,18 +49,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import gr323.shalaev.weather.data.models.CityLocationUi
 import gr323.shalaev.weather.data.models.CityUi
 import gr323.shalaev.weather.data.models.CoastlineUi
 import gr323.shalaev.weather.data.models.CountryUi
 import gr323.shalaev.weather.data.models.RegionUi
+import gr323.shalaev.weather.navigation.Screens
 import kotlin.io.encoding.Base64
 import kotlin.math.log
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(){
+fun MapScreen(navHostController: NavHostController){
 
     val viewModel: MapViewModel = viewModel()
     val state by viewModel.stateFlow.collectAsState()
@@ -158,7 +161,7 @@ fun MapScreen(){
                                 value = state.selectedCountry.description,
                                 onValueChange = {
                                 },
-                                label = { Text("Select Region") },
+                                label = { Text("Select Country") },
                                 readOnly = true,
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(
@@ -206,7 +209,7 @@ fun MapScreen(){
                                 value = state.selectedCity.description,
                                 onValueChange = {
                                 },
-                                label = { Text("Select Region") },
+                                label = { Text("Select City") },
                                 readOnly = true,
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(
@@ -239,12 +242,21 @@ fun MapScreen(){
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     shape = RoundedCornerShape(4.dp),
                     onClick = {
-
+                        if (state.selectedCity != CityUi.Default){
+                            navHostController.navigate(Screens.GraphScreen.setCity(city_id = state.selectedCity.identifier, city_name = state.selectedCity.description))
+                        }
                     }
                 ){
                     Text(text = "Explore")
                 }
             }
+        }
+    }else{
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ){
+            CircularProgressIndicator()
         }
     }
 }

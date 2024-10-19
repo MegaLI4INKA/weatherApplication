@@ -19,14 +19,26 @@ fun SetNavHostController(
         startDestination = Screens.MapScreen.route
     ){
         composable(
-            route = Screens.GraphScreen.route
+            route = Screens.GraphScreen.route,
+            arguments = listOf(
+                navArgument("city_id"){
+                    type = NavType.IntType
+                    defaultValue = 0
+                },
+                navArgument("city_name"){
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
         ){
-            GraphScreen()
+            val city_id: Int? = it.arguments?.getInt("city_id")
+            val city_name: String? = it.arguments?.getString("city_name")
+            GraphScreen(city_id?: 0, city_name?: "Undefined")
         }
         composable(
             route = Screens.MapScreen.route
         ){
-            MapScreen()
+            MapScreen(navHostController)
         }
     }
 }
