@@ -6,27 +6,28 @@ import java.util.Date
 import java.util.Locale
 import kotlin.concurrent.thread
 
-data class DailyTemperatureResponse(
+data class DailyResponse(
     val ts: String?,
     val temperature: Double?
 )
 
-data class DailyTemperatureUi(
+data class DailyUI(
     val ts: Date,
     val temperature: Double
-){
-    companion object{
-        val Default = DailyTemperatureUi(
+) {
+    companion object {
+        val Default = DailyUI(
             ts = Date(),
             temperature = 0.0
         )
     }
 }
 
-fun DailyTemperatureResponse.toUi(): DailyTemperatureUi {
-    val data = this
-    return DailyTemperatureUi(
-        ts = data.ts.orEmpty().parseDate(),
-        temperature = data.temperature?: 0.0
+fun DailyResponse.toUI(): DailyUI {
+    return DailyUI(
+        ts = ts.orEmpty().parseDate(),
+        temperature = temperature.orEmpty()
     )
 }
+
+fun Double?.orEmpty(): Double = this ?: 0.0

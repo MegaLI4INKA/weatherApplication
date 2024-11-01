@@ -1,22 +1,22 @@
 package gr323.shalaev.weather.screens.graph_screen
 
-import gr323.shalaev.weather.data.models.DailyTemperatureUi
-import gr323.shalaev.weather.data.models.MeasurementTimeRangeUi
+import gr323.shalaev.weather.data.models.DailyUI
+import gr323.shalaev.weather.data.models.MeasurementTimeRangeUI
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 data class GraphState(
+    val measurementTimeRange: MeasurementTimeRangeUI,
+    val daily: List<DailyUI>,
     val dateStart: Date,
     val dateEnd: Date,
-    val dailyTemperatures: List<DailyTemperatureUi>
+    val points: Int,
+    val datesByPoints: List<DailyUI>,
+    val loading: Boolean,
 ){
-    companion object{
-        val InitState = GraphState(
-            dateStart = Date(),
-            dateEnd = Date(),
-            dailyTemperatures = emptyList()
-        )
+    companion object {
+        val InitState = GraphState(MeasurementTimeRangeUI.Default, emptyList(), Date(), Date(), 20, emptyList(), true)
     }
 }
 

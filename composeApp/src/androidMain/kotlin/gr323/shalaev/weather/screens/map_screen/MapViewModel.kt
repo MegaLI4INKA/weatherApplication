@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import gr323.shalaev.weather.data.api.handleApiResponse
 import gr323.shalaev.weather.data.models.CityUi
 import gr323.shalaev.weather.data.models.CountryUi
-import gr323.shalaev.weather.data.models.MeasurementTimeRangeUi
 import gr323.shalaev.weather.data.models.RegionUi
 import gr323.shalaev.weather.data.models.toUi
 import gr323.shalaev.weather.di.ApiModule

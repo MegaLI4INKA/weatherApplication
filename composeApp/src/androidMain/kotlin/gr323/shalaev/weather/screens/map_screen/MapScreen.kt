@@ -287,7 +287,7 @@ fun WorldMap(
                         val longitude = yToLongitude(offset.y, minLongitude, maxLongitude, size.height.toFloat())
 
                         val currentCity = cityList.find {
-                            it.longitude in latitude-4..latitude+4 && it.latitude in longitude-4..longitude+4
+                            it.longitude in latitude-6..latitude+6 && it.latitude in longitude-6..longitude+6
                         }
                         currentCity?.let {
                             onSelectItem(it.identifier)

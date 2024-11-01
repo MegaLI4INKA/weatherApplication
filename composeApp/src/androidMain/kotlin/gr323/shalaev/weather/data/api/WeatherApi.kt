@@ -4,7 +4,7 @@ import gr323.shalaev.weather.data.models.CityLocationResponse
 import gr323.shalaev.weather.data.models.CityResponse
 import gr323.shalaev.weather.data.models.CoastlineResponse
 import gr323.shalaev.weather.data.models.CountryResponse
-import gr323.shalaev.weather.data.models.DailyTemperatureResponse
+import gr323.shalaev.weather.data.models.DailyResponse
 import gr323.shalaev.weather.data.models.MeasurementTimeRangeResponse
 import gr323.shalaev.weather.data.models.RegionResponse
 import retrofit2.Response
@@ -18,14 +18,16 @@ import java.util.Date
 interface WeatherApi {
 
     @GET("rpc/get_measurement_time_range")
-    suspend fun getMeasurementTimeRange(@Query("city") city: Int): Response<List<MeasurementTimeRangeResponse>>
+    suspend fun getMeasurementTimeRange(
+        @Query("city") city: Int
+    ): Response<List<MeasurementTimeRangeResponse>>
 
     @GET("rpc/get_daily_temperatures")
     suspend fun getDailyTemperatures(
         @Query("city") city: Int,
         @Query("ts_from") tsFrom: String,
-        @Query("ts_to") tsTo: String
-    ): Response<List<DailyTemperatureResponse>>
+        @Query("ts_to") tsTo: String,
+    ): Response<List<DailyResponse>>
 
     @GET("coastline")
     suspend fun getCoastline(): Response<List<CoastlineResponse>>

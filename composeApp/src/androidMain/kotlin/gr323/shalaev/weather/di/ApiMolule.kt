@@ -8,7 +8,7 @@ object ApiModule {
 
     fun provideApi(): WeatherApi {
 
-        return Retrofit.Builder().baseUrl("http://192.168.0.105:3000").addConverterFactory(
+        return Retrofit.Builder().baseUrl("http://192.168.189.219:3000").addConverterFactory(
             GsonConverterFactory.create())
             .build().create(WeatherApi::class.java)
     }
