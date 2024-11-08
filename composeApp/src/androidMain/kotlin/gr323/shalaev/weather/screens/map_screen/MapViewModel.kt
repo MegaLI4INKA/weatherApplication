@@ -12,7 +12,7 @@ import gr323.shalaev.weather.screens.graph_screen.GraphState
 import kotlinx.coroutines.launch
 import java.util.Date
 
-class MapViewModel: BaseScreenViewModel<MapState>(MapState.InitState){
+class MapViewModel(): BaseScreenViewModel<MapState>(MapState.InitState){
 
     private val api = ApiModule.provideApi()
 

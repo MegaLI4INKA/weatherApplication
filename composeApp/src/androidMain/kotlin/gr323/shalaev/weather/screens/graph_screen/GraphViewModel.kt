@@ -124,6 +124,26 @@ class GraphViewModel() : BaseScreenViewModel<GraphState>(GraphState.InitState) {
         }
     }
 
+    fun changeDialogState(stateDialog: Boolean){
+        reduce {
+            state.copy(
+                openChangeColorDialog = stateDialog
+            )
+        }
+    }
+
+    fun changeCurrentColor(name: String){
+        reduce {
+            state.copy(
+                currentColor = name
+            )
+        }
+    }
+
+//    fun changeColor(){
+//
+//    }
+
 }
 
 fun generateEqualDates(

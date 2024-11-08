@@ -1,8 +1,10 @@
 package gr323.shalaev.weather.screens.graph_screen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -21,15 +23,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -49,24 +57,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import gr323.shalaev.weather.data.models.DailyUI
 import gr323.shalaev.weather.navigation.Screens
 import kotlinx.coroutines.flow.asStateFlow
+import org.jetbrains.compose.resources.stringResource
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -89,6 +103,25 @@ fun GraphScreen(cityId: Int, cityName: String){
     LaunchedEffect(viewModel) {
         viewModel.getMeasurementTimeRange(cityId, cityName)
     }
+
+//    ChangeColorDialog(
+//
+//    )
+
+    if (state.openChangeColorDialog){
+        ChangeColorDialog(
+            currentColor = state.currentColor,
+            selectedColors = state.selectedGraphColor,
+            onDismissRequest = {
+                viewModel.changeDialogState(false)
+            },
+            onChangeColor = { colorName ->
+                viewModel.changeCurrentColor(colorName)
+                viewModel.changeDialogState(false)
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .verticalScroll(
@@ -248,7 +281,14 @@ fun GraphScreen(cityId: Int, cityName: String){
                 }
                 Spacer(modifier = Modifier.size(20.dp))
                 if (!state.loading) {
-                    TemperatureGraph(datesByPoints = state.datesByPoints.take(sliderValue.toInt()))
+                    TemperatureGraph(
+                        colorSchemeName = state.currentColor,
+                        modifier = Modifier.clickable {
+                            viewModel.changeDialogState(true)
+                        },
+                        colors = state.selectedGraphColor,
+                        datesByPoints = state.datesByPoints.take(sliderValue.toInt()),
+                    )
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
@@ -272,8 +312,7 @@ fun GraphScreen(cityId: Int, cityName: String){
                     Slider(
                         state = sliderStartState,
                         modifier = Modifier
-                            .weight(1f)
-
+                            .weight(1f),
                     )
                 }
                 Row(
@@ -303,7 +342,6 @@ fun GraphScreen(cityId: Int, cityName: String){
                     Slider(
                         state = sliderState,
                         modifier = Modifier.weight(1f)
-
                     )
                 }
                 if (openStartDialog) {
@@ -435,7 +473,12 @@ fun GraphScreen(cityId: Int, cityName: String){
 }
 
 @Composable
-fun TemperatureGraph(datesByPoints: List<DailyUI>) {
+fun TemperatureGraph(
+    modifier: Modifier = Modifier,
+    datesByPoints: List<DailyUI>,
+    colors: Map<String, Pair<Color, Color>>,
+    colorSchemeName: String = "GnBu",
+) {
     val minTemp = datesByPoints.minOfOrNull { it.temperature }?.let {
         it - (it % 5) - 5
     } ?: 0.0
@@ -450,9 +493,12 @@ fun TemperatureGraph(datesByPoints: List<DailyUI>) {
     val visibleLabelsCount = 10
     val yAxisWidth = 40.dp
 
+    val colorPair = colors[colorSchemeName] ?: Pair(Color.Black, Color.Red)
+
+
     Column {
         Canvas(
-            modifier = Modifier
+            modifier = modifier
                 .padding(start = yAxisWidth)
                 .fillMaxWidth()
                 .height(20.dp)
@@ -461,7 +507,7 @@ fun TemperatureGraph(datesByPoints: List<DailyUI>) {
             for (index in datesByPoints.indices) {
                 val temperature = datesByPoints[index].temperature
                 val tempRatio = ((temperature - minTemp) / (maxTemp - minTemp)).toFloat()
-                val color = lerp(Color.Blue, Color.Red, tempRatio)
+                val color = lerp(colorPair.first, colorPair.second, tempRatio)
                 drawRect(
                     color = color,
                     topLeft = Offset(xStep * index, 0f),
@@ -586,3 +632,63 @@ fun Long.toStartOfDay(): Long {
 }
 
 fun Long?.orEmpty(): Long = this ?: 0
+
+
+@Composable
+fun ChangeColorDialog(
+    currentColor: String,
+    selectedColors: Map<String, Pair<Color, Color>>,
+    onChangeColor: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.background,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, Color.White)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(18.dp)
+            ) {
+                selectedColors.forEach { (name, colors) ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(33.dp)
+                            .padding(vertical = 8.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(colors.first, colors.second)
+                                )
+                            )
+                            .clickable {
+                                onChangeColor(name)
+                            }
+                            .border(
+                                1.dp,
+                                if (currentColor == name){colors.second} else{Color.Transparent}
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = name,
+                            color = Color.White,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+            }
+        }
+    }
+}
